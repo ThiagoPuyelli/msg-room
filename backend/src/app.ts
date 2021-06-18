@@ -2,6 +2,13 @@ import express, { Application } from 'express'
 import morgan from 'morgan'
 import { connect } from 'mongoose'
 import { config } from 'dotenv'
+import passport from 'passport'
+import session from 'express-session'
+import passportBasic from './auth/passport-basic'
+
+// Routes
+import userRoutes from './routes/user.routes'
+
 config()
 
 export class App {
@@ -12,14 +19,25 @@ export class App {
     // Connect database
     this.connectDatabase()
 
+    // Passport
+    passportBasic()
+
     this.setCors()
     this.setMiddlewares()
+    this.setRoutes()
   }
 
   setMiddlewares () {
     this.app.use(morgan('dev'))
     this.app.use(express.urlencoded({ extended: false }))
     this.app.use(express.json())
+    this.app.use(session({
+      secret: process.env.SESSION_PASS,
+      resave: false,
+      saveUninitialized: false
+    }))
+    this.app.use(passport.initialize())
+    this.app.use(passport.session())
   }
 
   setCors () {
@@ -30,6 +48,10 @@ export class App {
       res.header('Allow', 'GET, POST, OPTIONS, PUT, DELETE')
       next()
     })
+  }
+
+  setRoutes () {
+    this.app.use('/auth/', userRoutes)
   }
 
   connectDatabase () {
