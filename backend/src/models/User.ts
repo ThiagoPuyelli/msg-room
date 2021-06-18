@@ -1,7 +1,7 @@
 import { Schema, Document, model } from 'mongoose'
 import { NextFunction } from 'express'
 import bcrypt from 'bcryptjs'
-import UserInterface from '../interfaces/User'
+import UserInterface from '../interfaces/UserInterface'
 
 const userSchema = new Schema<UserInterface & Document>({
   username: {
@@ -22,7 +22,17 @@ const userSchema = new Schema<UserInterface & Document>({
     required: true,
     minLength: 4
   },
-  image: String
+  image: String,
+  friends: {
+    type: [Schema.Types.ObjectId],
+    ref: 'User',
+    default: []
+  },
+  chats: {
+    type: [Schema.Types.ObjectId],
+    ref: 'Chat',
+    default: []
+  }
 }, {
   versionKey: false
 })

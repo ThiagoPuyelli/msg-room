@@ -50,4 +50,26 @@ router.post('/sign-in',
   }
 )
 
+router.put('/friend/:id', passport.authenticate('token'), async (req, res) => {
+  try {
+    const friend = await User.findById(req.params.id)
+
+    if (!friend) {
+      return sendResponse(res, 404, 'The user doesn\'t exist')
+    }
+
+    req.user.friends.push(friend._id)
+
+    const { friends } = req.user
+
+    const newUser = await User.findByIdAndUpdate(req.user._id, { friends })
+
+    if (!newUser) {
+      return sendResponse(res, 500, 'Error to add new user')
+    }
+  } catch (err) {
+    return sendResponse(res, 500, err.message || 'Server error')
+  }
+})
+
 export default router
