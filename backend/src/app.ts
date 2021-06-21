@@ -5,6 +5,7 @@ import { config } from 'dotenv'
 import passport from 'passport'
 import session from 'express-session'
 import passportBasic from './auth/passport-basic'
+import passportJwt from './auth/passport-jwt'
 
 // Routes
 import userRoutes from './routes/user.routes'
@@ -21,6 +22,7 @@ export class App {
 
     // Passport
     passportBasic()
+    passportJwt()
 
     this.setCors()
     this.setMiddlewares()

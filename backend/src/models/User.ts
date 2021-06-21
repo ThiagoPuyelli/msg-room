@@ -28,6 +28,22 @@ const userSchema = new Schema<UserInterface & Document>({
     ref: 'User',
     default: []
   },
+  requests: {
+    type: [{
+      user: {
+        type: Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
+      },
+      type: {
+        type: String,
+        enum: 'received' || 'envied',
+        required: true
+      },
+      _id: false
+    }],
+    default: []
+  },
   chats: {
     type: [Schema.Types.ObjectId],
     ref: 'Chat',

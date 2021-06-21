@@ -12,7 +12,7 @@ export default () => {
     done(null, user)
   })
 
-  passport.use('token', new BasicStrategy(
+  passport.use('login', new BasicStrategy(
     async (username, password, done) => {
       try {
         let user: any = await User.findOne({ username })
@@ -33,7 +33,6 @@ export default () => {
 
         if (user.toObject) {
           user = user.toObject()
-          console.log(user)
         }
 
         done(null, user)

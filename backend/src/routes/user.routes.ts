@@ -40,7 +40,7 @@ router.post('/sign-up', validateReq(registerJoi, 'body'), async (req, res) => {
 })
 
 router.post('/sign-in',
-  passport.authenticate('token'),
+  passport.authenticate('login'),
   async (req, res) => {
     const token = jwt.sign({ userID: req.user._id }, process.env.JWT_PASSWORD, {
       expiresIn: 24 * 24 * 60
@@ -50,23 +50,141 @@ router.post('/sign-in',
   }
 )
 
-router.put('/friend/:id', passport.authenticate('token'), async (req, res) => {
+router.put('/request/:id', passport.authenticate('token'), async (req, res) => {
   try {
+    if (req.user._id === req.params.id) {
+      return sendResponse(res, 403, 'The user is you')
+    }
+
     const friend = await User.findById(req.params.id)
 
     if (!friend) {
       return sendResponse(res, 404, 'The user doesn\'t exist')
     }
 
-    req.user.friends.push(friend._id)
+    const { friends, requests } = req.user
 
-    const { friends } = req.user
+    const friendVerify = friends.find(frie => String(frie) === String(friend._id))
 
-    const newUser = await User.findByIdAndUpdate(req.user._id, { friends })
+    if (friendVerify) {
+      return sendResponse(res, 403, 'The user is alredy your friend')
+    }
+
+    const requestVerify = await requests.find(frie => String(frie.user) === String(friend._id))
+
+    if (requestVerify) {
+      const { type } = requestVerify
+      if (type === 'received') {
+        return sendResponse(res, 402, 'You received request')
+      } else if (type === 'envied') {
+        return sendResponse(res, 402, 'The user envied request')
+      }
+    }
+
+    requests.push({ user: friend._id, type: 'envied' })
+
+    friend.requests.push({ user: req.user._id, type: 'received' })
+
+    const newUser = await User.findByIdAndUpdate(req.user._id, { requests })
 
     if (!newUser) {
-      return sendResponse(res, 500, 'Error to add new user')
+      return sendResponse(res, 500, 'Error to save request')
     }
+
+    const newRequest = await friend.save()
+
+    if (!newRequest) {
+      return sendResponse(res, 500, 'Error to send Request')
+    }
+    return sendResponse(res, 200, 'Request sended')
+  } catch (err) {
+    return sendResponse(res, 500, err.message || 'Server error')
+  }
+})
+
+router.get('/friend', passport.authenticate('token'), async (req, res) => {
+  try {
+    let { friends }: any = await User.findById(req.user._id)
+
+    if (!friends || friends.length <= 0) {
+      return sendResponse(res, 404, 'You don\'t have friends')
+    }
+
+    friends = (await User.populate(req.user, { path: 'friends' })).friends
+
+    friends = friends.map(friend => {
+      const { username, _id, image } = friend
+
+      return {
+        username,
+        _id,
+        image
+      }
+    })
+
+    return sendResponse(res, 200, { friends })
+  } catch (err) {
+    return sendResponse(res, 500, err.message || 'Server error')
+  }
+})
+
+router.get('/requests/:type', passport.authenticate('token'), async (req, res) => {
+  try {
+    const { type } = req.params
+
+    if (!type || (type !== 'envied' && type !== 'received')) {
+      return sendResponse(res, 500, 'The type is invalid')
+    }
+
+    let { requests } = await User.findById(req.user._id)
+
+    if (!requests || requests.length <= 0) {
+      return sendResponse(res, 404, 'You don\'t have requests')
+    }
+
+    requests = requests.filter(request => String(request.type) === type)
+
+    if (!requests || requests.length <= 0) {
+      return sendResponse(res, 404, 'You don\'t have requests')
+    }
+
+    return sendResponse(res, 200, { requests })
+  } catch (err) {
+    return sendResponse(res, 500, err.message || 'Server error')
+  }
+})
+
+router.put('/friend/:id', passport.authenticate('token'), async (req, res) => {
+  try {
+    const friend = await User.findById(req.params.id)
+
+    if (!friend) {
+      return sendResponse(res, 404, 'Your friend doesn\'t exist')
+    }
+
+    const request = req.user.requests.find(request => String(request.user) === String(friend._id))
+
+    if (!request || request.type === 'envied') {
+      return sendResponse(res, 404, 'The request doesn\'t exist')
+    }
+
+    friend.requests = friend.requests.filter(requ => String(requ.user) !== String(req.user._id))
+
+    req.user.requests = req.user.requests.filter(requ => String(requ.user) !== String(friend._id))
+    if (req.user.requests.length === 0) {
+      req.user.requests = []
+    }
+    req.user.friends.push(friend._id)
+
+    const newFriend = await friend.save
+    const newUser = await User.findByIdAndUpdate(req.user._id, req.user, { new: true })
+
+    console.log(newUser)
+    if (!newFriend || !newUser) {
+      return sendResponse(res, 500, 'Error to save friend or user')
+    }
+
+    return sendResponse(res, 200, 'Friend added')
   } catch (err) {
     return sendResponse(res, 500, err.message || 'Server error')
   }
