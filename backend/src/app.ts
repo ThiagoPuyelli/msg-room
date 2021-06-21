@@ -6,6 +6,7 @@ import passport from 'passport'
 import session from 'express-session'
 import passportBasic from './auth/passport-basic'
 import passportJwt from './auth/passport-jwt'
+import cors from 'cors'
 
 // Routes
 import userRoutes from './routes/user.routes'
@@ -40,6 +41,7 @@ export class App {
     }))
     this.app.use(passport.initialize())
     this.app.use(passport.session())
+    this.app.use(express.static('client'))
   }
 
   setCors () {
@@ -50,6 +52,7 @@ export class App {
       res.header('Allow', 'GET, POST, OPTIONS, PUT, DELETE')
       next()
     })
+    this.app.use(cors())
   }
 
   setRoutes () {

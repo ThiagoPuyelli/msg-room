@@ -24,8 +24,29 @@ const userSchema = new Schema<UserInterface & Document>({
   },
   image: String,
   friends: {
-    type: [Schema.Types.ObjectId],
-    ref: 'User',
+    type: [{
+      user: {
+        type: Schema.Types.ObjectId,
+        required: true,
+        ref: 'User'
+      },
+      chat: {
+        type: [{
+          message: {
+            type: String,
+            required: true,
+            maxLength: 1000
+          },
+          user: {
+            type: Schema.Types.ObjectId,
+            ref: 'User',
+            required: true
+          }
+        }],
+        default: []
+      },
+      _id: false
+    }],
     default: []
   },
   requests: {

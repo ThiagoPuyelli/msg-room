@@ -65,6 +65,7 @@ router.put('/request/:id', passport.authenticate('token'), async (req, res) => {
     const { friends, requests } = req.user
 
     const friendVerify = friends.find(frie => String(frie) === String(friend._id))
+    console.log(String(friends[0]), String(friend._id))
 
     if (friendVerify) {
       return sendResponse(res, 403, 'The user is alredy your friend')
@@ -154,7 +155,7 @@ router.get('/requests/:type', passport.authenticate('token'), async (req, res) =
   }
 })
 
-router.put('/friend/:id', passport.authenticate('token'), async (req, res) => {
+router.put('/friend/:id/:option', passport.authenticate('token'), async (req, res) => {
   try {
     const friend = await User.findById(req.params.id)
 
@@ -168,23 +169,30 @@ router.put('/friend/:id', passport.authenticate('token'), async (req, res) => {
       return sendResponse(res, 404, 'The request doesn\'t exist')
     }
 
+    if (req.params.option === 'accept') {
+      friend.friends.push({ user: req.user._id })
+      req.user.friends.push({ user: friend._id })
+    } else if (req.params.option !== 'ignore') {
+      return sendResponse(res, 402, 'The option is invalid')
+    }
+
     friend.requests = friend.requests.filter(requ => String(requ.user) !== String(req.user._id))
 
     req.user.requests = req.user.requests.filter(requ => String(requ.user) !== String(friend._id))
-    if (req.user.requests.length === 0) {
-      req.user.requests = []
-    }
-    req.user.friends.push(friend._id)
 
-    const newFriend = await friend.save
+    const newFriend = await friend.save()
+
     const newUser = await User.findByIdAndUpdate(req.user._id, req.user, { new: true })
 
-    console.log(newUser)
     if (!newFriend || !newUser) {
       return sendResponse(res, 500, 'Error to save friend or user')
     }
 
-    return sendResponse(res, 200, 'Friend added')
+    if (req.params.option === 'accept') {
+      return sendResponse(res, 200, 'Friend added')
+    } else if (req.params.option === 'ignore') {
+      return sendResponse(res, 200, 'Friend ignored')
+    }
   } catch (err) {
     return sendResponse(res, 500, err.message || 'Server error')
   }
