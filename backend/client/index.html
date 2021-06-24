@@ -9,9 +9,15 @@
     <script src="main.js"></script>
 </head>
 <body>
-    <form>
-        <input type="text" placeholder="message" id="">
+    <form id="formMessage" onsubmit='submitMessage()'>
+        <input type="text" placeholder="message" id="message">
         <input type="text" placeholder="user" id="">
+        <input type="submit" value="Enviar">
+    </form>
+
+    <form id="formChat" onsubmit="submitJoin()">
+        <input type="text" placeholder=Chat id=chat>
+        <input type="submit" value="Enviar">
     </form>
 </body>
 </html>
