@@ -33,12 +33,12 @@ export const setSockets = (app: Application) => {
     }
   })
     .on('connection', (socket) => {
-      socket.on('join-friend', async (chat, cb) => {
+      socket.on('join-friend', async (chat) => {
         try {
           const friend = socket.data.user.friends.find(friend => String(friend.user) === String(chat))
           if (friend) {
-            socket.join(friend.user)
-            return cb(`Joined ${chat}`)
+            socket.join(String(friend.user))
+            socket.emit('message', 'Joined')
           }
         } catch (err) {
           console.log(err)
